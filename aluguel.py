@@ -1,4 +1,11 @@
+"""Sistema de orçamento de aluguel da imobiliária fictícia R.M Imóveis."""
+
 import csv
+
+VALOR_CONTRATO = 2000
+MESES_ORCAMENTO = 12
+VALORES_BASE = {"Apartamento": 700, "Casa": 900, "Estúdio": 1200}
+
 
 class Imovel:
     def __init__(self, tipo, quartos, valor_base, garagem=False, vagas_estudio=0, tem_criancas=True):
@@ -19,68 +26,84 @@ class Imovel:
             valor += 250
 
         # Regras de garagem
-        if self.tipo in ["Apartamento", "Casa"]:
-            if self.garagem:
-                valor += 300
+        if self.tipo in ("Apartamento", "Casa") and self.garagem:
+            valor += 300
 
-        # Estúdio - vaga individual
-        if self.tipo == "Estúdio":
-            if self.vagas_estudio >= 2:
-                valor += 250
-                vagas_extra = self.vagas_estudio - 2
-                if vagas_extra > 0:
-                    valor += vagas_extra * 60
+        # Estúdio: pacote de 2 vagas por R$ 250 e R$ 60 por vaga adicional
+        if self.tipo == "Estúdio" and self.vagas_estudio >= 2:
+            valor += 250
+            valor += (self.vagas_estudio - 2) * 60
 
         # Desconto para apartamento sem crianças
         if self.tipo == "Apartamento" and not self.tem_criancas:
             valor *= 0.95  # 5% de desconto
 
-        return valor
+        return round(valor, 2)
 
-def gerar_csv(valor_mensal):
+
+def gerar_parcelas(valor_aluguel, parcelas_contrato):
+    """Retorna as 12 parcelas: o contrato é cobrado apenas nas primeiras N parcelas."""
+    valor_parcela_contrato = round(VALOR_CONTRATO / parcelas_contrato, 2)
     parcelas = []
-    for i in range(1, 13):
-        parcelas.append([f"Parcela {i}", round(valor_mensal, 2)])
+    for mes in range(1, MESES_ORCAMENTO + 1):
+        contrato = valor_parcela_contrato if mes <= parcelas_contrato else 0
+        parcelas.append((mes, valor_aluguel, contrato, round(valor_aluguel + contrato, 2)))
+    return parcelas
 
-    with open("parcelas_orcamento.csv", mode="w", newline="") as file:
-        writer = csv.writer(file)
-        writer.writerow(["Parcela", "Valor (R$)"])
-        writer.writerows(parcelas)
 
-    print("\nArquivo CSV gerado com sucesso: parcelas_orcamento.csv")
+def gerar_csv(parcelas, caminho="parcelas_orcamento.csv"):
+    with open(caminho, mode="w", newline="", encoding="utf-8-sig") as arquivo:
+        writer = csv.writer(arquivo, delimiter=";")
+        writer.writerow(["Parcela", "Aluguel (R$)", "Contrato (R$)", "Total (R$)"])
+        for mes, aluguel, contrato, total in parcelas:
+            writer.writerow([f"Parcela {mes}", f"{aluguel:.2f}", f"{contrato:.2f}", f"{total:.2f}"])
+    print(f"\nArquivo CSV gerado com sucesso: {caminho}")
+
+
+def perguntar_opcao(mensagem, opcoes):
+    while True:
+        resposta = input(mensagem).strip().lower()
+        if resposta in opcoes:
+            return resposta
+        print(f"Opção inválida. Responda com: {', '.join(opcoes)}.")
+
+
+def perguntar_inteiro(mensagem, minimo, maximo=None):
+    while True:
+        resposta = input(mensagem).strip()
+        if resposta.isdigit() and int(resposta) >= minimo and (maximo is None or int(resposta) <= maximo):
+            return int(resposta)
+        faixa = f"entre {minimo} e {maximo}" if maximo is not None else f"a partir de {minimo}"
+        print(f"Valor inválido. Digite um número inteiro {faixa}.")
+
 
 def main():
     print("=== Sistema de Orçamento Imobiliário R.M ===")
 
-    tipo = input("Tipo de imóvel (Apartamento / Casa / Estúdio): ")
-    tipo = tipo.capitalize()
+    tipos = {"apartamento": "Apartamento", "casa": "Casa", "estudio": "Estúdio", "estúdio": "Estúdio"}
+    tipo = tipos[perguntar_opcao("Tipo de imóvel (Apartamento / Casa / Estúdio): ", list(tipos))]
 
-    quartos = 1
-    garagem = False
-    vagas_estudio = 0
+    quartos, garagem, vagas_estudio, tem_criancas = 1, False, 0, True
+    if tipo in ("Apartamento", "Casa"):
+        quartos = perguntar_inteiro("Quantidade de quartos (1 ou 2): ", 1, 2)
+        garagem = perguntar_opcao("Deseja garagem? (s/n): ", ["s", "n"]) == "s"
+        if tipo == "Apartamento":
+            tem_criancas = perguntar_opcao("Possui crianças? (s/n): ", ["s", "n"]) == "s"
+    else:
+        vagas_estudio = perguntar_inteiro("Quantas vagas de estacionamento deseja? ", 0)
 
-    if tipo in ["Apartamento", "Casa"]:
-        quartos = int(input("Quantidade de quartos (1 ou 2): "))
-        garagem = input("Deseja garagem? (s/n): ").lower() == "s"
-        tem_criancas = input("Possui crianças? (s/n): ").lower() == "s"
-        valor_base = 700 if tipo == "Apartamento" else 900
+    parcelas_contrato = perguntar_inteiro("Em quantas parcelas quer pagar o contrato? (1 a 5): ", 1, 5)
 
-    elif tipo == "Estúdio":
-        valor_base = 1200
-        vagas_estudio = int(input("Quantas vagas de estacionamento deseja? "))
-        tem_criancas = True  # Não afeta estúdio
+    imovel = Imovel(tipo, quartos, VALORES_BASE[tipo], garagem, vagas_estudio, tem_criancas)
+    aluguel = imovel.calcular_aluguel()
+    parcelas = gerar_parcelas(aluguel, parcelas_contrato)
 
-    contrato = 2000
-    parcelas_contrato = int(input("Em quantas parcelas quer pagar o contrato? (1 a 5): "))
-    valor_parcela_contrato = contrato / parcelas_contrato
+    print(f"\nValor mensal do aluguel: R$ {aluguel:.2f}")
+    print(f"Contrato: R$ {VALOR_CONTRATO:.2f} em {parcelas_contrato}x de R$ {parcelas[0][2]:.2f}")
+    print(f"Primeira parcela (aluguel + contrato): R$ {parcelas[0][3]:.2f}")
 
-    imovel = Imovel(tipo, quartos, valor_base, garagem, vagas_estudio, tem_criancas)
-    valor_mensal = imovel.calcular_aluguel() + valor_parcela_contrato
+    gerar_csv(parcelas)
 
-    print(f"\nValor mensal do aluguel: R$ {round(imovel.calcular_aluguel(), 2)}")
-    print(f"Valor mensal com contrato parcelado: R$ {round(valor_mensal, 2)}")
-
-    gerar_csv(valor_mensal)
 
 if __name__ == "__main__":
     main()

@@ -1,42 +1,34 @@
-🏡 Sistema de Orçamento Imobiliário — Python
+# Orçamento de Aluguel (POO)
 
-Este projeto é um sistema para geração de orçamento de aluguel para uma imobiliária fictícia chamada R.M Imóveis, desenvolvido em Python com Programação Orientada a Objetos (POO).
+Sistema em Python que gera o orçamento de aluguel de uma imobiliária fictícia (R.M Imóveis), aplicando regras de negócio com Programação Orientada a Objetos e exportando as 12 parcelas em CSV.
 
-O sistema calcula o valor do aluguel com base em regras comerciais e gera um arquivo CSV contendo as 12 parcelas do orçamento.
+Projeto da disciplina Algorithmic Thinking & Introduction to Object-Oriented Programming, do curso de Análise e Desenvolvimento de Sistemas da UniFECAF.
 
-✅ Funcionalidades
+## Regras de negócio
 
-Seleção do tipo de imóvel:
+| Tipo | Valor base | Adicionais |
+| --- | --- | --- |
+| Apartamento | R$ 700 | 2 quartos: +R$ 200 · garagem: +R$ 300 · sem crianças: 5% de desconto |
+| Casa | R$ 900 | 2 quartos: +R$ 250 · garagem: +R$ 300 |
+| Estúdio | R$ 1.200 | 2 vagas: +R$ 250 · cada vaga extra: +R$ 60 |
 
-Apartamento
+O contrato imobiliário (R$ 2.000) pode ser parcelado em até 5 vezes e é cobrado apenas nas primeiras parcelas do orçamento.
 
-Casa
+## Como executar
 
-Estúdio
+```bash
+python aluguel.py
+```
 
-Cálculo do aluguel conforme regras:
+Responda às perguntas no terminal. O arquivo `parcelas_orcamento.csv` é gerado com aluguel, contrato e total de cada mês (separador `;`, pronto para abrir no Excel).
 
-Valor base por tipo
+## Conceitos aplicados
 
-Adicional para 2 quartos
+- Classe `Imovel` encapsulando as regras de cálculo
+- Validação de todas as entradas do usuário
+- Constantes para valores de negócio
+- Exportação de dados em CSV
 
-Garagem opcional (casa/apto)
+## Autor
 
-Vagas extras para estúdio
-
-Desconto para apartamento sem crianças
-
-Parcelamento do contrato imobiliário (1 a 5 parcelas)
-
-Exibição do valor final mensal
-
-Geração automática de arquivo .csv com 12 parcelas
-
-🧠 Conceitos e Tecnologias
-Item	Utilização
-Python Desenvolvimento do sistema
-Programação Orientada a Objetos	Estrutura e regras
-Entrada e saída via terminal	Interface do usuário
-Manipulação de arquivos CSV	Exportação das parcelas
-Pensamento algorítmico	Lógica do cálculo
-
+Guilherme Oliveira · [LinkedIn](https://www.linkedin.com/in/guilhermeoss)
